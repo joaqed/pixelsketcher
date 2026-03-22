@@ -230,6 +230,7 @@ document.addEventListener('click', (event) => {
 
 });
 
+<<<<<<< HEAD
 const scaleButton = document.getElementById("Scale object");
 scaleButton.addEventListener("click", () => {
     for (let i = 0; i < scene.children.length; i++) {
@@ -247,6 +248,60 @@ scaleButton.addEventListener("click", () => {
 
 
 
+=======
+const keys = {
+    w: false,
+    a: false,
+    s: false,
+    d: false
+};
+document.addEventListener('keydown', (event) => {
+    if (event.key in keys) {
+        keys[event.key] = true;
+    }
+
+    if (event.key === 'w') {
+        camera.position.set(camera.position.x, camera.position.y + 0.5, camera.position.z);
+    }
+    if (event.key === 's') {
+        camera.position.set(camera.position.x, camera.position.y - 0.5, camera.position.z);
+    }
+    if (event.key === 'a') {
+        camera.position.set(camera.position.x - 0.5, camera.position.y, camera.position.z);
+    }
+    if (event.key === 'd') {
+        camera.position.set(camera.position.x + 0.5, camera.position.y, camera.position.z);
+    }
+});
+
+window.addEventListener('wheel', (event) => {
+  const zoomSpeed = 0.1;
+
+  if (event.deltaY < 0) {
+    camera.position.z -= zoomSpeed;
+  } else {
+    camera.position.z += zoomSpeed;
+  }
+});
+
+const scaleButton = document.getElementById("Scale object");
+scaleButton.addEventListener("click", () => {
+    for (let i = 0; i < scene.children.length; i++) {
+        const child = scene.children[i];
+        if (child instanceof THREE.Mesh) {
+            child.scale.multiplyScalar(0.8);
+            child.position.multiplyScalar(0.8);
+        }
+        else if (child instanceof THREE.Points) {
+            child.scale.multiplyScalar(0.8);
+            child.position.multiplyScalar(0.8);
+        }
+    }
+});
+
+
+
+>>>>>>> 667b98d (V2)
 const selectCheckbox = document.getElementById("pixel mode");
 selectCheckbox.addEventListener("change", () => {
     mode = selectCheckbox.checked ? "pixel" : "point";
