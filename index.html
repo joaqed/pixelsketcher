@@ -23,6 +23,7 @@
     <label>
         <input type="checkbox" id="pixel mode" checked>Pixel Mode
     </label>
+    
     <label>
         <input type="color" id="color picker" value="#00ff00">Color</input>
     </label>
@@ -31,7 +32,9 @@
     <button id="undo">Undo</button>
     <button id="toggle grid">Toggle Grid</button>
     <button id="group objects">Group Objects</button>
-    <button id="animate frames">Animate Frames</button>
+    <button id="animate frames">Not ready</button>
+    
+    
 </div>
 
 <div>
@@ -150,6 +153,60 @@ function least_pixel(mark){
     square.material.color.set(colorPicker.value);
 
 }
+let drawing = false;
+
+document.addEventListener('mousedown', () => {
+    drawing = true;
+});
+document.addEventListener('mouseup', () => {
+    drawing = false;
+});
+document.addEventListener('mousemove', (event) => {
+    if (!drawing) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersectPoint = new THREE.Vector3();
+    raycaster.ray.intersectPlane(plane, intersectPoint);
+
+    calc_dist(intersectPoint);
+
+    if (mode === "point"){
+        least_circle();
+    }
+
+    if (mode === "pixel"){
+        least_pixel();
+    }
+});
+
+document.addEventListener('click', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersectPoint = new THREE.Vector3();
+    raycaster.ray.intersectPlane(plane, intersectPoint);
+
+
+    calc_dist(intersectPoint);
+
+    if (mode === "point"){
+        least_circle();
+    }
+
+    if (mode === "pixel"){
+        least_pixel();
+    }
+
+});
+
 
 const undoButton = document.getElementById("undo");
 undoButton.addEventListener("click", () => {
@@ -244,28 +301,8 @@ colorPicker.addEventListener("input", () => {
     let color = new THREE.Color(colorPicker.value);
     colors.push(color);
 });
-document.addEventListener('click', (event) => {
-    const rect = renderer.domElement.getBoundingClientRect();
-
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const intersectPoint = new THREE.Vector3();
-    raycaster.ray.intersectPlane(plane, intersectPoint);
 
 
-    calc_dist(intersectPoint);
-
-    if (mode === "point"){
-        least_circle();
-    }
-
-    if (mode === "pixel"){
-        least_pixel();
-    }
-
-});
 
 const keys = {
     w: false,
