@@ -1,35 +1,45 @@
 <div>
+    <img src="spiral.jpeg" alt="Spiral Image" style="width: 200px; height: auto;">
+    <img src="spiral.jpeg" alt="Spiral Image" style="width: 200px; height: auto;">
+    <img src="spiral.jpeg" alt="Spiral Image" style="width: 200px; height: auto;">
+    <img src="spiral.jpeg" alt="Spiral Image" style="width: 200px; height: auto;">
+</div>
+
 <div>
     <p>Welcome to the Pixel Sketcher!</p>
     <p>Select a grid size and spacing to get started.</p>
     <p>Click on the canvas to add points or pixels to your sketch.</p>
     <p>Use the color picker to change the color of your points or pixels.</p>
     <p>Save & load your sketches at any time.</p>
+    
 </div>
 <div>
     <label>
-        <input type="number" id="gridsize" value="16" min="0" max="64"> Grid Size
+        <input type="number" id="grid size" value="16" min="0" max="64"> Grid Size
     </label>
     <label>
         <input type="number" id="spacing" value="1" min="0.1" max="5" step="0.1">Spacing
     </label>
     <label>
-        <input type="checkbox" id="pixelmode" checked>Pixel Mode
+        <input type="checkbox" id="pixel mode" checked>Pixel Mode
     </label>
+    
     <label>
-        <input type="color" id="colorpicker" value="#00ff00">Color
+        <input type="color" id="color picker" value="#00ff00">Color</input>
     </label>
-    <button id="export-object">Export Object</button>
-    <button id="load-object">Load Object</button>
+    <button id="export object">Export Object</button>
+    <button id="load object">Load Object</button>
     <button id="undo">Undo</button>
-    <button id="toggle-grid">Toggle Grid</button>
-    <button id="group-objects">Group Objects</button>
-    <button id="select-frames">Select Frames</button>
-    <button id="animate-frames">Animate Frames</button>
+    <button id="toggle grid">Toggle Grid</button>
+    <button id="group objects">Group Objects</button>
+
+    
+    
 </div>
 
 <div>
-    <button id="scale-object">Scale Object</button>
+    <button id="Scale object">Scale Object</button>
+
 </div>
 
 <script type="importmap">
@@ -45,7 +55,7 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
@@ -65,208 +75,206 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
-let mode = "pixel";
+let mode = "point";
+
 let points = [];
 let indices = [];
 let colors = [];
+let object = [points, indices, colors];
 let frames = [];
-let drawnMeshes = []; // track drawn meshes for undo
+
 
 function createGrid(size) {
-    points = [];
-    for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-            const pt = new THREE.Vector3((i - size / 2) * 0.5, (j - size / 2) * 0.5, 0);
+
+    for(let i=0;i<size;i++) {
+        for(let j=0;j<size;j++) {
+            const pt = new THREE.Vector3((i - size/2) * 0.5, (j - size/2) * 0.5, 0);
             points.push(pt);
         }
     }
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.PointsMaterial({ color: 0x888888, size: 0.1 });
     let grid = new THREE.Points(geometry, material);
-    grid.userData.isGrid = true;
     scene.add(grid);
 }
 
 createGrid(40);
 
-let distances = [];
-function calc_dist(intersectPoint) {
-    distances = [];
-    for (let i = 0; i < points.length; i++) {
-        let dist = Math.sqrt(((points[i].x - intersectPoint.x) ** 2) + ((points[i].y - intersectPoint.y) ** 2));
-        distances.push(dist);
+let distances = []
+function calc_dist(intersectPoint){
+    distances = []
+    for(let i=0;i<points.length;i++){
+        let dist = Math.sqrt(((points[i].x - intersectPoint.x)**2) + ((points[i].y - intersectPoint.y)**2))
+        distances.push(dist)
+        //console.log(dist)
     }
 }
 
-function getLowestIndex() {
-    let lowest = 0;
-    for (let i = 1; i < distances.length; i++) {
-        if (distances[i] < distances[lowest]) lowest = i;
+
+function least_circle(){
+
+    let lowest = 0 
+    for(let i =0;i<distances.length;i++){
+        if(distances[i] < distances[lowest]){
+            lowest = i
+        }
     }
-    return lowest;
-}
+    console.log("lowest index:", lowest)
+    let circle_mark = points[lowest]
+    indices.push(lowest)
 
-function least_circle() {
-    const lowest = getLowestIndex();
-    const circle_mark = points[lowest];
-    indices.push(lowest);
-
+    const material = new THREE.PointsMaterial({ color: 0xff0522, size: 0.1 });
     const geometry = new THREE.CircleGeometry(0.1, 32);
-    const material = new THREE.MeshBasicMaterial({ color: colorPicker.value });
     const circle = new THREE.Mesh(geometry, material);
+    
     circle.position.copy(circle_mark);
     scene.add(circle);
-    drawnMeshes.push(circle);
+    circle.material.color.set(colorPicker.value);
+
 }
 
-function least_pixel() {
-    const lowest = getLowestIndex();
-    const pixel_mark = points[lowest];
-    indices.push(lowest);
+function least_pixel(mark){
 
-    const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.1);
-    const material = new THREE.MeshBasicMaterial({ color: colorPicker.value });
+    let lowest = 0 
+    for(let i =0;i<distances.length;i++){
+        if(distances[i] < distances[lowest]){
+            lowest = i
+        }
+    }
+    console.log("lowest index:", lowest)
+    let pixel_mark = points[lowest]
+    indices.push(lowest)
+
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0522 });    const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.1);
     const square = new THREE.Mesh(geometry, material);
+    
     square.position.copy(pixel_mark);
     scene.add(square);
-    drawnMeshes.push(square);
+    square.material.color.set(colorPicker.value);
+
 }
-
 let drawing = false;
-document.addEventListener('mousedown', () => { drawing = true; });
-document.addEventListener('mouseup', () => { drawing = false; });
 
-function handleDraw(event) {
+document.addEventListener('mousedown', () => {
+    drawing = true;
+});
+document.addEventListener('mouseup', () => {
+    drawing = false;
+});
+document.addEventListener('mousemove', (event) => {
+    if (!drawing) return;
+
     const rect = renderer.domElement.getBoundingClientRect();
+
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
     raycaster.setFromCamera(mouse, camera);
     const intersectPoint = new THREE.Vector3();
     raycaster.ray.intersectPlane(plane, intersectPoint);
+
     calc_dist(intersectPoint);
-    if (mode === "point") least_circle();
-    if (mode === "pixel") least_pixel();
-}
 
-document.addEventListener('mousemove', (event) => { if (drawing) handleDraw(event); });
-document.addEventListener('click', handleDraw);
+    if (mode === "point"){
+        least_circle();
+    }
 
-// Undo
-document.getElementById("undo").addEventListener("click", () => {
-    if (drawnMeshes.length > 0) {
-        const last = drawnMeshes.pop();
-        scene.remove(last);
-        last.geometry.dispose();
-        last.material.dispose();
-        indices.pop();
+    if (mode === "pixel"){
+        least_pixel();
     }
 });
 
-// Load object
-document.getElementById("load-object").addEventListener("click", () => {
+document.addEventListener('click', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersectPoint = new THREE.Vector3();
+    raycaster.ray.intersectPlane(plane, intersectPoint);
+
+
+    calc_dist(intersectPoint);
+
+    if (mode === "point"){
+        least_circle();
+    }
+
+    if (mode === "pixel"){
+        least_pixel();
+    }
+
+});
+
+
+const undoButton = document.getElementById("undo");
+undoButton.addEventListener("click", () => {
+    if (indices.length > 0) {
+        indices.pop();
+        scene.remove(scene.children[scene.children.length - 1]);
+    }
+});
+
+const loadButton = document.getElementById("load object");
+loadButton.addEventListener("click", () => {
     const loader = new GLTFLoader();
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const contents = event.target.result;
+        loader.parse(contents, '', (gltf) => {
+
+    gltf.scene.traverse((child) => {
+        if (child.isMesh && child.material) {
+            const color = child.material.color;
+
+            child.material = new THREE.MeshBasicMaterial({
+                color: color
+            });
+        }
+    });
+
+    scene.add(gltf.scene);
+});
+    };
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.gltf,.glb';
     fileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            loader.parse(e.target.result, '', (gltf) => {
-                gltf.scene.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        child.material = new THREE.MeshBasicMaterial({ color: child.material.color });
-                    }
-                });
-                scene.add(gltf.scene);
-            });
-        };
         reader.readAsArrayBuffer(file);
     });
     fileInput.click();
 });
 
-// Group objects
-document.getElementById("group-objects").addEventListener("click", () => {
+const groupButton = document.getElementById("group objects");   
+groupButton.addEventListener("click", () => {
     const group = new THREE.Group();
-    const toGroup = [];
     scene.children.forEach((child) => {
-        if ((child instanceof THREE.Mesh || child instanceof THREE.Points) && !child.userData.isGrid) {
-            toGroup.push(child);
+        if (child instanceof THREE.Mesh || child instanceof THREE.Points) {
+            group.add(child);
         }
     });
-    toGroup.forEach(child => group.add(child));
     scene.add(group);
-});
+})
 
-// Select frames
-document.getElementById("select-frames").addEventListener("click", () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.gltf,.glb';
-    fileInput.multiple = true;
-    fileInput.addEventListener('change', async (event) => {
-        const loader = new GLTFLoader();
-        for (const file of event.target.files) {
-            const url = URL.createObjectURL(file);
-            try {
-                const gltf = await loader.loadAsync(url);
-                gltf.scene.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        child.material = new THREE.MeshBasicMaterial({ color: child.material.color });
-                    }
-                });
-                frames.push(gltf.scene);
-            } catch (err) {
-                console.error("Error loading frame:", err);
-            }
-        }
-        console.log(`Loaded ${frames.length} frames`);
-    });
-    fileInput.click();
-});
 
-// ---- OPTIMIZED EXPORT: merge all pixel meshes into one geometry ----
-document.getElementById("export-object").addEventListener("click", () => {
+
+const exportButton = document.getElementById("export object");
+exportButton.addEventListener("click", () => {
     const exporter = new GLTFExporter();
     const exportScene = new THREE.Scene();
 
-    const geometries = [];
-
-    scene.children.forEach((child) => {
-        if (child instanceof THREE.Mesh && !child.userData.isGrid) {
-            child.updateMatrixWorld(true);
-            const cloned = child.geometry.clone();
-            cloned.applyMatrix4(child.matrixWorld); // bake transform
-
-            // bake vertex colors
-            const color = child.material.color;
-            const count = cloned.attributes.position.count;
-            const colorsArr = new Float32Array(count * 3);
-            for (let i = 0; i < count; i++) {
-                colorsArr[i * 3]     = color.r;
-                colorsArr[i * 3 + 1] = color.g;
-                colorsArr[i * 3 + 2] = color.b;
-            }
-            cloned.setAttribute('color', new THREE.BufferAttribute(colorsArr, 3));
-            geometries.push(cloned);
-        }
-        // also export groups (loaded objects)
-        else if (child instanceof THREE.Group) {
+    for (let i = 0; i < scene.children.length; i++) {
+        const child = scene.children[i];
+        if (child instanceof THREE.Mesh || child instanceof THREE.Points) {
             exportScene.add(child.clone());
         }
-    });
-
-    if (geometries.length > 0) {
-        const merged = mergeGeometries(geometries, false);
-        const material = new THREE.MeshBasicMaterial({ vertexColors: true });
-        const mergedMesh = new THREE.Mesh(merged, material);
-        exportScene.add(mergedMesh);
-
-        // clean up cloned geometries
-        geometries.forEach(g => g.dispose());
+        else if (child instanceof THREE.Group) {
+            const groupClone = child.clone();
+            exportScene.add(groupClone);
+        }
     }
-
     exporter.parse(exportScene, (result) => {
         const output = JSON.stringify(result, null, 2);
         const blob = new Blob([output], { type: 'application/json' });
@@ -276,77 +284,114 @@ document.getElementById("export-object").addEventListener("click", () => {
         link.download = 'sketch.gltf';
         link.click();
     }, { binary: false });
+
+    
 });
 
-// Toggle grid
-const toggleGridButton = document.getElementById("toggle-grid");
+const toggleGridButton = document.getElementById("toggle grid");
 let gridActive = true;
 toggleGridButton.addEventListener("click", () => {
     gridActive = !gridActive;
     scene.children.forEach((child) => {
-        if (child.userData.isGrid) child.visible = gridActive;
-    });
-});
-
-const colorPicker = document.getElementById("colorpicker");
-
-// Camera controls
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'w') camera.position.y += 0.5;
-    if (event.key === 's') camera.position.y -= 0.5;
-    if (event.key === 'a') camera.position.x -= 0.5;
-    if (event.key === 'd') camera.position.x += 0.5;
-});
-
-window.addEventListener('wheel', (event) => {
-    camera.position.z += event.deltaY > 0 ? 0.5 : -0.5;
-});
-
-// Scale
-document.getElementById("scale-object").addEventListener("click", () => {
-    scene.children.forEach((child) => {
-        if ((child instanceof THREE.Mesh || child instanceof THREE.Points) && !child.userData.isGrid) {
-            child.scale.multiplyScalar(0.8);
-            child.position.multiplyScalar(0.8);
+        if (child instanceof THREE.Points && child.geometry instanceof THREE.BufferGeometry) {
+            child.visible = gridActive;
         }
     });
 });
 
-// Mode toggle
-document.getElementById("pixelmode").addEventListener("change", (e) => {
-    mode = e.target.checked ? "pixel" : "point";
+const colorPicker = document.getElementById("color picker");
+colorPicker.addEventListener("input", () => {
+    let color = new THREE.Color(colorPicker.value);
+    colors.push(color);
 });
 
-// Grid size
-document.getElementById("gridsize").addEventListener("change", (event) => {
+
+
+const keys = {
+    w: false,
+    a: false,
+    s: false,
+    d: false
+};
+document.addEventListener('keydown', (event) => {
+    if (event.key in keys) {
+        keys[event.key] = true;
+    }
+
+    if (event.key === 'w') {
+        camera.position.set(camera.position.x, camera.position.y + 0.5, camera.position.z);
+    }
+    if (event.key === 's') {
+        camera.position.set(camera.position.x, camera.position.y - 0.5, camera.position.z);
+    }
+    if (event.key === 'a') {
+        camera.position.set(camera.position.x - 0.5, camera.position.y, camera.position.z);
+    }
+    if (event.key === 'd') {
+        camera.position.set(camera.position.x + 0.5, camera.position.y, camera.position.z);
+    }
+});
+
+window.addEventListener('wheel', (event) => {
+  const zoomSpeed = 0.1;
+
+  if (event.deltaY < 0) {
+    camera.position.z -= zoomSpeed;
+  } else {
+    camera.position.z += zoomSpeed;
+  }
+});
+
+const scaleButton = document.getElementById("Scale object");
+scaleButton.addEventListener("click", () => {
+    for (let i = 0; i < scene.children.length; i++) {
+        const child = scene.children[i];
+        if (child instanceof THREE.Mesh) {
+            child.scale.multiplyScalar(0.8);
+            child.position.multiplyScalar(0.8);
+        }
+        else if (child instanceof THREE.Points) {
+            child.scale.multiplyScalar(0.8);
+            child.position.multiplyScalar(0.8);
+        }
+    }
+});
+
+
+
+const selectCheckbox = document.getElementById("pixel mode");
+selectCheckbox.addEventListener("change", () => {
+    mode = selectCheckbox.checked ? "pixel" : "point";
+});
+
+document.getElementById("spacing").addEventListener("change", (event) => {
+     let spacing = parseFloat(event.target.value);
+});
+
+document.getElementById("grid size").addEventListener("change", (event) => {
     const gridSize = parseInt(event.target.value);
-    const toRemove = scene.children.filter(c => c.userData.isGrid);
-    toRemove.forEach(c => { scene.remove(c); c.geometry.dispose(); });
-    createGrid(gridSize);
+    scene.children.forEach((child) => {
+        if (child instanceof THREE.GridHelper) {
+            scene.remove(child);
+        }
+    });
+    createGrid(gridSize, spacing);
 });
 
-// Animate frames
-let animationInterval = null;
-let currentFrame = null;
-let currentFrameIndex = 0;
-
-document.getElementById("animate-frames").addEventListener("click", () => {
-    if (animationInterval) clearInterval(animationInterval);
-    currentFrameIndex = 0;
-
-    animationInterval = setInterval(() => {
-        if (frames.length === 0) return;
-        if (currentFrame) scene.remove(currentFrame);
-        currentFrame = frames[currentFrameIndex].clone(true);
-        scene.add(currentFrame);
-        currentFrameIndex = (currentFrameIndex + 1) % frames.length;
-    }, 100);
-});
 
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
+
+    
 }
+
+
 animate();
 
+
 </script>
+
+<div>
+    <img src="strawberry Small.jpeg" alt="Strawberry Image" style="width: 50px; height: auto;">
+</div>
